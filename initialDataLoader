@@ -1,0 +1,127 @@
+'''
+Alexander Pushkar
+4/10/2022
+
+Used to initially load database framework with csv file
+Once database loaded file is no longer needed, 
+'''
+from ast import IsNot
+from asyncio.windows_events import NULL
+from asyncore import write
+from contextlib import nullcontext
+from encodings import utf_8, utf_8_sig
+from itertools import product
+from pickle import TRUE
+from re import I
+import this
+from tkinter.tix import INTEGER
+import unicodedata
+import mysql.connector
+import csv
+
+#Creates Connection to DB
+mydb = mysql.connector.connect(
+    host = "localhost",
+    user = "root",
+    password = "Minecraft999!!!",
+    database = "customerschema",
+    autocommit = True
+)
+
+
+#Creates cursor to interact with DB
+mycursor = mydb.cursor()
+mycursor.execute("SELECT EXISTS(SELECT 1 FROM orders);")
+print(mycursor.fetchall())
+if 1 in mycursor.fetchall():
+    quit()
+
+mycursor.execute("""SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED""")
+
+
+##Works on Customers
+mycursor.execute("SET FOREIGN_KEY_CHECKS=0;")
+
+mycursor.execute("TRUNCATE TABLE customers;")
+mycursor.execute("TRUNCATE TABLE products;")
+mycursor.execute("TRUNCATE TABLE orders;")
+
+
+
+mydb.commit()
+
+
+# Hold Unique Values for Filtering
+
+orderLogs = []
+customers = []
+products = []
+CustomerID = []
+productsID = []
+sales = []
+
+# Opens files and deliminates by ','
+with open("Sample - Superstore - Sample - Superstore.csv", 'r', encoding='utf-8') as csvfile:
+    next(csvfile)
+    reader = csv.reader(csvfile)
+    for row in reader:
+        
+        if row[5] not in CustomerID:
+            CustomerID.append(row[5])
+            customers.append((row[5], row[6]))
+
+
+
+        if row[13] not in productsID:
+            productsID.append(row[13])
+            products.append((row[16], row[13], row[14], row[15]))
+            sales.append((row[13],row[17], row[18], row[19], row[20]))
+        
+        orderLogs.append((row[1], row[13], row[5], row[2], row[3], row[4], row[7], row[8], row[9], row[10], row[12], row[11]))
+
+
+
+
+
+#print(customers)
+
+mycursor.executemany('''INSERT INTO customers VALUES (%s, %s);''', customers)
+mycursor.executemany('''INSERT INTO products VALUES (%s, %s, %s, %s);''', products)
+mycursor.executemany('''INSERT INTO orders VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);''', orderLogs)
+mycursor.executemany('''INSERT INTO sales VALUES (%s, %s, %s, %s, %s)''', sales)
+
+mydb.commit()
+
+print("Reached End Of File")
+
+
+
+
+
+
+
+
+
+
+##Loops to populate customers
+
+'''
+#Inserts into Customers Table
+mycursor.executemany(sql, val)
+print("No. of records inserted into customers: ", mycursor.rowcount)
+'''
+
+
+#Prints all values from last callback
+
+mycursor.execute("SELECT * FROM orders")
+myresult = mycursor.fetchall()
+for x in myresult:
+  print(x)
+
+
+
+mycursor.execute("SET FOREIGN_KEY_CHECKS=1;")
+
+  
+mydb.close()
