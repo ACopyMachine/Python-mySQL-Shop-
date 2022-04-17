@@ -47,7 +47,7 @@ from datetime import date, datetime
 mydb = mysql.connector.connect(
     host = "localhost",
     user = "root",
-    password = "Minecraft999!!!",
+    password = "AVR!!20052006",
     database = "customerschema",
     autocommit = True
 )
