@@ -8,6 +8,9 @@ load new information, search for current, or remove
 
 '''
 
+#Imports are kind of wacky and honestly some things
+#which it says arnt accessed breaks the entire thing
+#if removed
 from __future__ import print_function
 from ast import Delete, IsNot
 from asyncio.base_futures import _FINISHED
@@ -50,10 +53,60 @@ from datetime import date, datetime
 AS A POINT OF NOTE
 The CSV file this project is based on came with
 absolute NIL documentation so assignment of ID's 
-and relation has been Jerryrigged and creative 
+and relations has been jerryrigged and creative 
 liberaties have been taken
 '''
 ######
+
+###
+"""
+There are a few garbage values
+inside DB from testing, can 
+run Inital Data Loader to refresh
+the DB
+"""
+###
+
+#######
+"""
+Naming Convention For Frames/Functions
+
+beggining denotes function:
+s = search
+aN = add new
+d = delete
+v = view
+
+End denote table:
+OL = order log
+C = customer
+P = product
+
+EX:
+aNOL = add new order log
+dC = delete customer
+"""
+#######
+
+
+#######
+"""
+Planned But Non Implimented Features Due To Time Crunch:
+ - Search by typing page number
+      -Just rework the page display system in general, straight garbage
+ - Refactor displays to use tree view/allow for best fit searching
+ - Do more with Sales table
+ - Spruce up GUI
+ - Rework dateEntry system
+ - Rework how displays call for info and grab from db in specific rows instead of entire db being put into array
+ - Better sanatization
+ - More robust feedback info on bad data
+ - Make server accessible outside local
+ - Loading time reduction by optimization   
+"""
+#######
+
+
 
 #Creates Connection to DB
 mydb = mysql.connector.connect(
@@ -92,12 +145,13 @@ outPutFrame.grid(row = 1, column = 1)
 def popupwin(insert_val):
    #Create a Toplevel window
    top= Toplevel(win, border=4)
-
    #Create a Button to print something in the Entry widget
    Label(top,text= insert_val, font=("Segoe UI", 15)).pack(pady= 5,side=TOP)
    #Create a Button Widget in the Toplevel Window
    button= Button(top, text="Ok", font=("Segoe UI", 15), command=lambda:top.destroy())
    button.pack(pady=5, side= TOP)
+   #Moves top level popup to ~Center
+   top.geometry(f"+{500}+{500}")
 
 
 
@@ -141,6 +195,9 @@ class DateEntry(tk.Frame):
         self.entries = [self.entry_1, self.entry_2, self.entry_3]
 
         #To allow program to ensure inputted values dont exceed length and delete if they do on typing them
+        #***Breaks if typed to quickly, reallllly bad  
+        #No Documentation on onValidate, all Stack fourms on topic just have code, no explination
+        #{Possibly use duel threading to have checks run parralel instead of garbage bind system}
         self.entry_1.bind('<KeyRelease>', lambda e: self._check(0, 2))
         self.entry_2.bind('<KeyRelease>', lambda e: self._check(1, 2))
         self.entry_3.bind('<KeyRelease>', lambda e: self._check(2, 4))
@@ -340,7 +397,7 @@ def aNPButtonFunc():#function of the button
     clicked = StringVar()
     clicked.set( "Select Category" )
     
-    #Main category ***REDO NAMING
+    #Main category
     categoryDrop = OptionMenu(aNPButtonFrame , clicked , *categoryOptions, command = OptionMenu_CheckButton )
     categoryDrop.grid(row=6, column=2)
     categoryDrop.config(font=("Segoe UI", 15))
@@ -398,7 +455,7 @@ def aNPButtonFunc():#function of the button
 
 
 
-def aNOLButtonFunc():#function of the button
+def aNOLButtonFunc():#function of the add new order log button
     clearOutPutWindow()
 
     #Creates Frame in outPutFrame
@@ -517,6 +574,8 @@ def aNOLButtonFunc():#function of the button
         productID = [item for t in mycursor.fetchall() for item in t]
         mycursor.execute("SELECT customerID FROM customers")
         customerID = [item for t in mycursor.fetchall() for item in t]
+        
+        #Only realizing in post CSV file uses full state names not abbreviations, but this is easier for data input 
         states = [ 'AK', 'AL', 'AR', 'AZ', 'CA', 'CO', 'CT', 'DC', 'DE', 'FL', 'GA',
                'HI', 'IA', 'ID', 'IL', 'IN', 'KS', 'KY', 'LA', 'MA', 'MD', 'ME',
                'MI', 'MN', 'MO', 'MS', 'MT', 'NC', 'ND', 'NE', 'NH', 'NJ', 'NM',
@@ -554,7 +613,7 @@ def aNOLButtonFunc():#function of the button
 
         inputTuple = (orderID, productIDEntry.get(), customerIDEntry.get(), orderDateFormatted, shipDateFormatted, selectedShipMethod.get(), selectedSegment.get(), "USA", cityEntry.get(), stateEntry.get(), selectedRegion.get(), zipEntry.get())
 
-                                                                #Tuple hell
+                                                             #Tuple hell
         mycursor.execute("INSERT INTO orders VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", inputTuple)
         mycursor.close
         popupwin("Following Order Was Added\nOrderID:%s\tProduct ID:%s\tCustomer ID:%s\nOrder Date:%s\tShip Date:%s\tShip Mode:%s\nSegment:%s\tCountry:%s\tCity:%s\nState:%s\tRegion:%s\tPostal Code:%s" % inputTuple)
@@ -587,9 +646,15 @@ def vCButtonFunc():#function of view Customers the button
     vCButtonFrame.grid(row = 1, column = 2)
     
 
+    Label(vCButtonFrame, text="Customer ID:", font=("Segoe UI", 15)).grid(row = 0, column = 0)
+    Label(vCButtonFrame, text="Customer Name", font=("Segoe UI", 15)).grid(row = 0, column = 1)
+
+
+
     mycursor = mydb.cursor()
 
-    #YEs I know this is bad practice and extremlly slow ***FIX THIS AND ALL INSTANCES
+    #YEs I know this is bad practice and extremlly slow but would require refactoring the entierty
+    #Of the view functions to allow for row calling, would be easier to just rewrite from scratch
     mycursor.execute("SELECT * FROM customers")
     outPutRows = mycursor.fetchall()
 
@@ -602,7 +667,7 @@ def vCButtonFunc():#function of view Customers the button
 
     #Creates label to dispaly number of pages 
     vCPageNumber = Label(vCButtonFrame, text=("Page number: 1 / %d" % totPages), font=("Segoe UI", 15))
-    vCPageNumber.grid(row = 20, column = 0)
+    vCPageNumber.grid(row = 25, column = 0)
 
 
     #Used as lambda function for next and foward buttons, takes start index and direction of travel
@@ -625,19 +690,19 @@ def vCButtonFunc():#function of view Customers the button
 
         #Prints results into grid.
         rows = []
-        for i in range(20):
+        for r in range(20):
 
             cols = []
 
-            for j in range(2):
+            for c in range(2):
 
                 e = Entry(vCButtonFrame, relief=GROOVE, font=("Segoe UI", 15))
                 
-                e.grid(row=i, column=j, sticky=NSEW)
+                e.grid(row=r+1, column=c, sticky=NSEW)
 
                 #If end of list, values are overridden with blank space
-                if count-i > 0:
-                    e.insert(END, "%s" % ((outPutRows[i+startValue[0]])[j]))
+                if count-r > 0:
+                    e.insert(END, "%s" % ((outPutRows[r+startValue[0]])[c]))
                 else:
                     e.insert(END, '')
 
@@ -654,8 +719,8 @@ def vCButtonFunc():#function of view Customers the button
     #Next and back buttons created, 1 means foward and -1 means backwards
     nextButton = Button(vCButtonFrame, text="Next Page", font=("Segoe UI", 15), command = lambda: resultOutputerFunc(int(startValue[0]), 1))
     backButton = Button(vCButtonFrame, text="Previous Page", font=("Segoe UI", 15), command= lambda: resultOutputerFunc(int(startValue[0]), -1))
-    nextButton.grid(row = 20, column = 2)
-    backButton.grid(row = 20, column = 1)
+    nextButton.grid(row = 25, column = 2)
+    backButton.grid(row = 25, column = 1)
     
     #Initial load of table
     resultOutputerFunc(0, 0)
@@ -677,6 +742,10 @@ def vPButtonFunc():#function of the button to view Products
     vPButtonFrame = Frame(outPutFrame)
     vPButtonFrame.grid(row = 1, column = 2)
     
+    Label(vPButtonFrame, text="Product Name:", font=("Segoe UI", 15)).grid(row = 0, column = 0)
+    Label(vPButtonFrame, text="Product ID", font=("Segoe UI", 15)).grid(row = 0, column = 1)
+    Label(vPButtonFrame, text="Category:", font=("Segoe UI", 15)).grid(row = 0, column = 2)
+    Label(vPButtonFrame, text="Sub Category", font=("Segoe UI", 15)).grid(row = 0, column = 3)
 
     mycursor = mydb.cursor()
 
@@ -692,7 +761,7 @@ def vPButtonFunc():#function of the button to view Products
 
     #Page number label
     vPPageNumber = Label(vPButtonFrame, text=("Page number: 1 / %d" % totPages), font=("Segoe UI", 15))
-    vPPageNumber.grid(row = 20, column = 0)
+    vPPageNumber.grid(row = 25, column = 0)
 
 
 
@@ -713,17 +782,17 @@ def vPButtonFunc():#function of the button to view Products
 
         #For every row we want to display, and each column, new entry is created to display
         rows = []
-        for i in range(20):
+        for r in range(20):
 
             cols = []
 
-            for j in range(4):
+            for c in range(4):
 
                 e = Entry(vPButtonFrame, relief=GROOVE, font=("Segoe UI", 15))
                 
-                e.grid(row=i, column=j, sticky=NSEW)
-                if count-i > 0:
-                    e.insert(END, "%s" % ((outPutRows[i+startValue[0]])[j]))
+                e.grid(row=r+1, column=c, sticky=NSEW)
+                if count-r > 0:
+                    e.insert(END, "%s" % ((outPutRows[r+startValue[0]])[c]))
                 else:
                     e.insert(END, '')
                 e['state'] = "readonly"
@@ -739,8 +808,8 @@ def vPButtonFunc():#function of the button to view Products
     #Buttons to move foward one and back one
     nextButton = Button(vPButtonFrame, text="Next Page", font=("Segoe UI", 15), command = lambda: resultOutputerFunc(int(startValue[0]), 1))
     backButton = Button(vPButtonFrame, text="Previous Page", font=("Segoe UI", 15), command= lambda: resultOutputerFunc(int(startValue[0]), -1))
-    nextButton.grid(row = 20, column = 3)
-    backButton.grid(row = 20, column = 2)
+    nextButton.grid(row = 25, column = 3)
+    backButton.grid(row = 25, column = 2)
 
     #Initilazies first page  
     resultOutputerFunc(0, 0)
@@ -902,7 +971,8 @@ def sCButtonFunc(): #Function to search customers
         else:
             outPutText = "" 
             for i in range(len(rows)):
-                outPutText += ("Name: %s\n ID: %s\n\n" % (rows[i][1], rows[i][0]))
+                if i < 5:
+                    outPutText += ("Name: %s\n ID: %s\n\n" % (rows[i][1], rows[i][0]))
 
             outputLabel1.config(text = outPutText)
 
@@ -947,13 +1017,13 @@ def sPButtonFunc():
 
         mycursor = mydb.cursor()
 
-        mycursor.execute("SELECT * FROM products WHERE (productName = %s || productID = %s);", val)
+        mycursor.execute("SELECT * FROM products WHERE (productName =  %s || productID = %s);", val)
         rows = mycursor.fetchall()
 
         if len(rows)==0:
             outputLabel.config(text = "No Results Found")
         else:
-            outputLabel.config(text = rows)
+            outputLabel.config(text = ("Product Name: %s\nProduct ID: %s\nCategory: %s\nSub Category: %s") % (rows[0][0], rows[0][1], rows[0][2], rows[0][3]))
 
         mycursor.close()
         nameEntry.delete(0,last=END)
@@ -1033,12 +1103,12 @@ def dPButtonFunc():
             return 0
 
         #No issues with duplication as productID unique 
-        mycursor.execute("SELECT * FROM products WHERE productID = '%s'" % selectedProduct.get())
+        mycursor.execute("SELECT * FROM products WHERE productID = %s" % selectedProduct.get())
         IDs = mycursor.fetchall()
 
         #Checks if value actally found then removes and prompts popup
         if len(IDs)>0:
-            mycursor.execute("DELETE FROM products WHERE productID = '%s'" % selectedProduct.get())
+            mycursor.execute("DELETE FROM products WHERE productID = %s" % selectedProduct.get())
             popupwin("Product Name: {}  \nProduct ID: {} \nDeleted from the Database".format(IDs[0][0], selectedProduct.get()))
 
         else:
@@ -1077,53 +1147,29 @@ def dOLButtonFunc(): #Delete Order Log
 
 
     # US-2017-147655 {For reference to regex}
-        if re.search("^[A-Z]{2}[-]{1}[0-9]{4}[-]{1}[0-9]{6}%" , selectedOrderID.get()) == None or re.search("^[A-Z]{3}[-]{1}[A-Z]{2}[-]{1}[0-9]{8}$" , selectedProductID.get()) == None:
+        if re.search("[A-Z]{2}[-]{1}[0-9]{4}[-]{1}[0-9]{6}" , selectedOrderID.get()) == None or re.search("^[A-Z]{3}[-]{1}[A-Z]{2}[-]{1}[0-9]{8}$" , selectedProductID.get()) == None:
              popupwin("You Have Input An Improper Value")
              return 0
 
-        mycursor.execute("SELECT * FROM orders WHERE orderID = '%s' AND productID = '%s'", (selectedOrderID.get(), selectedProductID.get()))
+        mycursor.execute("SELECT * FROM orders WHERE OrderID = %s AND Products_productID = %s", (selectedOrderID.get(), selectedProductID.get()))
         orderLog = mycursor.fetchall()
 
         if len(orderLog)>0:
-            mycursor.execute("DELECT FROM orders WHERE orderID = '%s' AND customerID = '%s'", (selectedOrderID, selectedProductID))
+            print(selectedProductID.get())
+            mycursor.execute("DELETE FROM orders WHERE OrderID = %s AND Products_productID = %s", (selectedOrderID.get(), selectedProductID.get()))
             popupwin("Order ID: {}  \nProduct ID: {} \nCustomer ID: {}\nDeleted from the Database".format(selectedOrderID.get(), selectedProductID.get(),orderLog[0][2]))
 
         else:
             popupwin("Order Log Not Found")
-
+   
         selectedProductID.delete(0, END)
         selectedOrderID.delete(0, END)     
 
-        mycursor.close
-
-
-        '''
-        mycursor = mydb.cursor()
-        #Regex ensures proper formating of ID 
-        if re.search("^[A-Z]{3}[-]{1}[A-Z]{2}[-]{1}[0-9]{8}$" , selectedProduct.get()) == None:
-            popupwin("Please Input Proper Product ID")
-            return 0
-
-        #No issues with duplication as productID unique 
-        mycursor.execute("SELECT * FROM products WHERE productID = '%s'" % selectedProduct.get())
-        IDs = mycursor.fetchall()
-
-        #Checks if value actally found then removes and prompts popup
-        if len(IDs)>0:
-            mycursor.execute("DELETE FROM products WHERE productID = '%s'" % selectedProduct.get())
-            popupwin("Product Name: {}  \nProduct ID: {} \nDeleted from the Database".format(IDs[0][0], selectedProduct.get()))
-
-        else:
-            popupwin("Product ID not found")
-            
-        selectedProduct.delete(0, END)    
         mycursor.close()
-        '''
-
-
 
 
     Button(dOLButtonFrame, text = 'Submit', font=("Segoe UI", 15) , command = submitButtonFunc).grid(row = 2, column = 1)    
+
 
 
 
@@ -1171,8 +1217,4 @@ selectionButtons.grid_columnconfigure(0, weight=1)
 
 
 
-
-
 win.mainloop()
-
-

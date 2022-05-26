@@ -1,0 +1,103 @@
+"""
+from asyncio.windows_events import NULL
+from asyncore import write
+from encodings import utf_8, utf_8_sig
+from pickle import TRUE
+from re import I
+import this
+from tkinter.tix import INTEGER
+import unicodedata
+import mysql.connector
+import csv
+
+#Creates Connection to DB
+mydb = mysql.connector.connect(
+    host = "localhost",
+    user = "root",
+    password = "Minecraft999!!!",
+    database = "customerschema",
+    autocommit = True
+)
+
+
+#Creates cursor to interact with DB
+mycursor = mydb.cursor()
+
+mycursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
+
+# Hold Unique Values for Filtering
+orderLog = []
+customerID = []
+customerName = []
+orderID = []
+productID = []
+productName = []
+
+# Opens files and deliminates by ','
+with open("Sample - Superstore - Sample - Superstore.csv", 'r', encoding='utf-8') as csvfile:
+    next(csvfile)
+    reader = csv.reader(csvfile)
+    for row in reader:
+        if row[5] not in customerID:
+            customerID.append(row[5])
+            customerName.append(row[6])
+        if row[1] not in orderID:
+            orderID.append(row[1])
+        if row[13] not in productID:
+            productID.append(row[13])
+        if row[16] not in productName:
+            productName.append(row[16])
+        orderLog.append(row)
+
+
+
+
+##Works on Customers
+mycursor.execute("SET FOREIGN_KEY_CHECKS=0;")
+
+mycursor.execute("TRUNCATE TABLE customers")
+
+mycursor.execute("SET FOREIGN_KEY_CHECKS=1;")
+
+
+
+sql = "INSERT INTO customers VALUES (%s, %s);"
+val = []
+
+##Loops to populate customers
+i = 0
+while i < len(customerID): 
+    val.append((customerID[i],customerName[i]))
+    i+=1
+
+#Inserts into Customers Table
+mycursor.executemany(sql, val)
+print("No. of records inserted into customers: ", mycursor.rowcount)
+
+#Prints all values from last callback
+'''
+mycursor.execute("SELECT * FROM customers")
+myresult = mycursor.fetchall()
+for x in myresult:
+  print(x)
+'''
+
+
+sql = '''INSERT INTO products VALUES (%s, %s, %s, %s);'''
+val = []
+
+##Loops to populate products
+i = 0
+while i < len(productName):
+    val.append((productName[i],productID[i]))
+    i+=1
+
+#Inserts into Customers Table
+mycursor.executemany(sql, val)
+print("No. of records inserted : ", mycursor.rowcount)
+
+
+
+  
+mydb.close()
+"""

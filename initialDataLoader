@@ -4,6 +4,8 @@ Alexander Pushkar
 
 Used to initially load database framework with csv file
 Once database loaded file is no longer needed, 
+Or is you do something execptionally stupid like dropping all the tables
+This is the backup
 '''
 from ast import IsNot
 from asyncio.windows_events import NULL
@@ -23,12 +25,10 @@ import csv
 mydb = mysql.connector.connect(
     host = "localhost",
     user = "root",
-    password = "AVR!!20052006",
+    password = "Minecraft999!!!",
     database = "customerschema",
     autocommit = True
 )
-#Use below segment in DB script to create schema
-#CREATE DATABASE `customerschema` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 
 
 #Creates cursor to interact with DB
@@ -41,7 +41,7 @@ if 1 in mycursor.fetchall():
 mycursor.execute("""SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED""")
 
 
-##Works on Customers
+##Needed to truncate all tables and refill with values, checks reinstated after script finishes
 mycursor.execute("SET FOREIGN_KEY_CHECKS=0;")
 
 mycursor.execute("TRUNCATE TABLE customers;")
@@ -62,7 +62,7 @@ CustomerID = []
 productsID = []
 sales = []
 
-# Opens files and deliminates by ','
+# Opens csv file and deliminates by ',' before appending into different lists
 with open("Sample - Superstore - Sample - Superstore.csv", 'r', encoding='utf-8') as csvfile:
     next(csvfile)
     reader = csv.reader(csvfile)
@@ -85,13 +85,14 @@ with open("Sample - Superstore - Sample - Superstore.csv", 'r', encoding='utf-8'
 
 
 
-#print(customers)
 
+#Inserts values in lists into proper tables 
 mycursor.executemany('''INSERT INTO customers VALUES (%s, %s);''', customers)
 mycursor.executemany('''INSERT INTO products VALUES (%s, %s, %s, %s);''', products)
 mycursor.executemany('''INSERT INTO orders VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);''', orderLogs)
 mycursor.executemany('''INSERT INTO sales VALUES (%s, %s, %s, %s, %s)''', sales)
 
+#Commit changes
 mydb.commit()
 
 print("Reached End Of File")
@@ -105,7 +106,7 @@ print("Reached End Of File")
 
 
 
-##Loops to populate customers
+##Loop   to populate customers
 
 '''
 #Inserts into Customers Table
@@ -114,13 +115,13 @@ print("No. of records inserted into customers: ", mycursor.rowcount)
 '''
 
 
-#Prints all values from last callback
-
+#Prints all values from last callback [TESTING]
+'''
 mycursor.execute("SELECT * FROM orders")
 myresult = mycursor.fetchall()
 for x in myresult:
   print(x)
-
+'''
 
 
 mycursor.execute("SET FOREIGN_KEY_CHECKS=1;")
