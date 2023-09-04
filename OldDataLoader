@@ -14,7 +14,7 @@ import csv
 mydb = mysql.connector.connect(
     host = "localhost",
     user = "root",
-    password = "Minecraft999!!!",
+    password = "",
     database = "customerschema",
     autocommit = True
 )
